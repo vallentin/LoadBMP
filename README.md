@@ -5,7 +5,44 @@
 for loading and saving [BMP][BMP] image files.
 
 [LoadBMP][LoadBMP] has no no dependencies besides the standard C libraries
-`stdlib.h` and `string.h`.
+`stdlib.h`, `string.h` and `stdio.h`.
+
+
+## Examples
+
+[LoadBMP][LoadBMP] uses raw buffers and support RGB (`LOADBMP_RGB`) and RGBA (`LOADBMP_RGBA`) formats.
+The order is RGBRGBRGB... or RGBARGBARGBA..., from top left
+to bottom right, without any padding.
+
+The format ultimately only affects the size and layout of the pixel buffer.
+Thereby when loading a BMP and selecting `LOADBMP_RGBA`, an alpha value of 255 is added.
+When saving the BMP the knowledge of an alpha value is only used to be able
+to skip it and properly index the colors.
+
+### Loading BMP
+
+```c
+unsigned char *pixels = NULL;
+unsigned int width, height;
+
+unsigned int err = loadbmp_decode_file("image.bmp", &pixels, &width, &height, LOADBMP_RGBA);
+
+if (err)
+	printf("LoadBMP Load Error: %u\n", err);
+```
+
+
+### Saving BMP
+
+```c
+unsigned char *pixels = NULL;
+unsigned int width, height;
+
+unsigned int err = loadbmp_encode_file("image.bmp", pixels, width, height, LOADBMP_RGBA);
+
+if (err)
+	printf("LoadBMP Load Error: %u\n", err);
+```
 
 
 ## Reporting Bugs & Requests
