@@ -29,13 +29,16 @@ unsigned int err = loadbmp_decode_file("image.bmp", &pixels, &width, &height, LO
 
 if (err)
 	printf("LoadBMP Load Error: %u\n", err);
+
+// Remember to free the pixel data when it isn't needed anymore.
+free(pixels);
 ```
 
 
 ### Saving BMP
 
 ```c
-unsigned char *pixels = NULL;
+unsigned char *pixels = ...;
 unsigned int width, height;
 
 unsigned int err = loadbmp_encode_file("image.bmp", pixels, width, height, LOADBMP_RGBA);
