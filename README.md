@@ -1,5 +1,5 @@
 
-# LoadBMP ![Release][LoadBMPVersionBadge] ![License][LoadBMPLicenseBadge]
+# LoadBMP [![Build Status][LoadBMPBuildStatus]][LoadBMPCI] ![Release][LoadBMPVersionBadge] ![License][LoadBMPLicenseBadge]
 
 [LoadBMP][LoadBMP] is a single-header C library
 for loading and saving [BMP][BMP] image files.
@@ -84,6 +84,9 @@ freely, subject to the following restrictions:
 
 [LoadBMP]: https://github.com/MrVallentin/LoadBMP
 [LoadBMPLicense]: https://github.com/MrVallentin/LoadBMP/blob/master/LICENSE
+
+[LoadBMPBuildStatus]: https://drone.io/github.com/MrVallentin/LoadBMP/status.png
+[LoadBMPCI]: https://drone.io/github.com/MrVallentin/LoadBMP/latest
 
 [LoadBMPVersionBadge]: https://img.shields.io/badge/release-v1.0.0-blue.svg
 [LoadBMPLicenseBadge]: https://img.shields.io/badge/license-%20free%20to%20use%2C%20share%2C%20modify%20and%20redistribute-blue.svg
