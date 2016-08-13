@@ -4,9 +4,9 @@
 // Repository: https://github.com/MrVallentin/LoadBMP
 //
 // Date Created: January 03, 2014
-// Last Modified: August 08, 2016
+// Last Modified: August 13, 2016
 //
-// Version: 1.0.0
+// Version: 1.1.0
 
 // Copyright (c) 2014-2016 Christian Vallentin <mail@vallentinsource.com>
 //
@@ -51,8 +51,10 @@ extern "C" {
 #define LOADBMP_FILE_NOT_FOUND 2
 #define LOADBMP_FILE_OPERATION 3
 
-#define LOADBMP_INVALID_SIGNATURE 4
-#define LOADBMP_INVALID_BITS_PER_PIXEL 5
+#define LOADBMP_INVALID_FILE_FORMAT 4
+
+#define LOADBMP_INVALID_SIGNATURE 5
+#define LOADBMP_INVALID_BITS_PER_PIXEL 6
 
 
 // Components
@@ -72,11 +74,11 @@ extern "C" {
 // to bottom right, without any padding.
 
 
-LOADBMP_API unsigned int loadbmp_encode_file(
-	const char *filename, const unsigned char *pixels, unsigned int width, unsigned int height, unsigned int components);
-
 LOADBMP_API unsigned int loadbmp_decode_file(
-	const char *filename, unsigned char **pixels, unsigned int *width, unsigned int *height, unsigned int components);
+	const char *filename, unsigned char **imageData, unsigned int *width, unsigned int *height, unsigned int components);
+
+LOADBMP_API unsigned int loadbmp_encode_file(
+	const char *filename, const unsigned char *imageData, unsigned int width, unsigned int height, unsigned int components);
 
 
 #ifdef LOADBMP_IMPLEMENTATION
@@ -86,13 +88,112 @@ LOADBMP_API unsigned int loadbmp_decode_file(
 #	pragma warning(disable: 4996)
 #endif
 
-#include <stdlib.h> /* malloc() */
-#include <string.h> /* memset() */
+#include <stdlib.h> /* malloc(), free() */
+#include <string.h> /* memset(), memcpy() */
 #include <stdio.h> /* fopen(), fwrite(), fread(), fclose() */
 
 
+LOADBMP_API unsigned int loadbmp_decode_file(
+	const char *filename, unsigned char **imageData, unsigned int *width, unsigned int *height, unsigned int components)
+{
+	FILE *f = fopen(filename, "rb");
+
+	if (!f)
+		return LOADBMP_FILE_NOT_FOUND;
+
+	unsigned char bmp_file_header[14];
+	unsigned char bmp_info_header[40];
+	unsigned char bmp_pad[3];
+
+	unsigned int w, h;
+	unsigned char *data = NULL;
+
+	unsigned int x, y, i, padding;
+
+	memset(bmp_file_header, 0, sizeof(bmp_file_header));
+	memset(bmp_info_header, 0, sizeof(bmp_info_header));
+
+	if (fread(bmp_file_header, sizeof(bmp_file_header), 1, f) == 0)
+	{
+		fclose(f);
+		return LOADBMP_INVALID_FILE_FORMAT;
+	}
+
+	if (fread(bmp_info_header, sizeof(bmp_info_header), 1, f) == 0)
+	{
+		fclose(f);
+		return LOADBMP_INVALID_FILE_FORMAT;
+	}
+
+	if ((bmp_file_header[0] != 'B') || (bmp_file_header[1] != 'M'))
+	{
+		fclose(f);
+		return LOADBMP_INVALID_SIGNATURE;
+	}
+
+	if ((bmp_info_header[14] != 24) && (bmp_info_header[14] != 32))
+	{
+		fclose(f);
+		return LOADBMP_INVALID_BITS_PER_PIXEL;
+	}
+
+	w = (bmp_info_header[4] + (bmp_info_header[5] << 8) + (bmp_info_header[6] << 16) + (bmp_info_header[7] << 24));
+	h = (bmp_info_header[8] + (bmp_info_header[9] << 8) + (bmp_info_header[10] << 16) + (bmp_info_header[11] << 24));
+	
+	if ((w > 0) && (h > 0))
+	{
+		data = (unsigned char*)malloc(w * h * components);
+
+		if (!data)
+		{
+			fclose(f);
+			return LOADBMP_OUT_OF_MEMORY;
+		}
+
+		for (y = (h - 1); y != -1; y--)
+		{
+			for (x = 0; x < w; x++)
+			{
+				i = (x + y * w) * components;
+
+				if (fread(data + i, 3, 1, f) == 0)
+				{
+					free(data);
+
+					fclose(f);
+					return LOADBMP_INVALID_FILE_FORMAT;
+				}
+
+				data[i] ^= data[i + 2] ^= data[i] ^= data[i + 2]; // BGR -> RGB
+
+				if (components == LOADBMP_RGBA)
+					data[i + 3] = 255;
+			}
+
+			padding = ((4 - (w * 3) % 4) % 4);
+
+			if (fread(bmp_pad, 1, padding, f) != padding)
+			{
+				free(data);
+
+				fclose(f);
+				return LOADBMP_INVALID_FILE_FORMAT;
+			}
+		}
+	}
+
+	(*width) = w;
+	(*height) = h;
+	(*imageData) = data;
+
+	fclose(f);
+
+	return LOADBMP_NO_ERROR;
+}
+
+
 LOADBMP_API unsigned int loadbmp_encode_file(
-	const char *filename, const unsigned char *pixels, unsigned int width, unsigned int height, unsigned int components)
+	const char *filename, const unsigned char *imageData, unsigned int width, unsigned int height, unsigned int components)
 {
 	FILE *f = fopen(filename, "wb");
 
@@ -101,9 +202,13 @@ LOADBMP_API unsigned int loadbmp_encode_file(
 
 	unsigned char bmp_file_header[14] = { 'B', 'M', 0, 0, 0, 0, 0, 0, 0, 0, 54, 0, 0, 0 };
 	unsigned char bmp_info_header[40] = { 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 24, 0 };
-	unsigned char bmp_pad[3] = { 0, 0, 0 };
+	const unsigned char bmp_pad[3] = { 0, 0, 0 };
 
 	const unsigned int size = 54 + width * height * 3; // 3 as the BMP format uses 3 channels (red, green, blue and NO alpha)
+
+	unsigned int x, y, i, padding;
+
+	unsigned char pixel[3];
 
 	bmp_file_header[2] = (unsigned char)(size);
 	bmp_file_header[3] = (unsigned char)(size >> 8);
@@ -120,99 +225,43 @@ LOADBMP_API unsigned int loadbmp_encode_file(
 	bmp_info_header[10] = (unsigned char)(height >> 16);
 	bmp_info_header[11] = (unsigned char)(height >> 24);
 
-	fwrite(bmp_file_header, 1, 14, f);
-	fwrite(bmp_info_header, 1, 40, f);
+	if (fwrite(bmp_file_header, 14, 1, f) == 0)
+	{
+		fclose(f);
+		return LOADBMP_FILE_OPERATION;
+	}
 
-	unsigned int x, y, index;
+	if (fwrite(bmp_info_header, 40, 1, f) == 0)
+	{
+		fclose(f);
+		return LOADBMP_FILE_OPERATION;
+	}
 
 	for (y = (height - 1); y != -1; y--)
 	{
 		for (x = 0; x < width; x++)
 		{
-			index = (x + y * width) * components;
+			i = (x + y * width) * components;
 
-			fwrite(pixels + index + 2, sizeof(unsigned char), 1, f);
-			fwrite(pixels + index + 1, sizeof(unsigned char), 1, f);
-			fwrite(pixels + index + 0, sizeof(unsigned char), 1, f);
+			memcpy(pixel, imageData + i, sizeof(pixel));
+
+			pixel[0] ^= pixel[2] ^= pixel[0] ^= pixel[2]; // RGB -> BGR
+
+			if (fwrite(pixel, sizeof(pixel), 1, f) == 0)
+			{
+				fclose(f);
+				return LOADBMP_FILE_OPERATION;
+			}
 		}
 
-		fwrite(bmp_pad, 1, ((4 - (width * 3) % 4) % 4), f);
-	}
+		padding = ((4 - (width * 3) % 4) % 4);
 
-	fclose(f);
-
-	return LOADBMP_NO_ERROR;
-}
-
-
-LOADBMP_API unsigned int loadbmp_decode_file(
-	const char *filename, unsigned char **pixels, unsigned int *width, unsigned int *height, unsigned int components)
-{
-	FILE *f = fopen(filename, "rb");
-
-	if (!f)
-		return LOADBMP_FILE_NOT_FOUND;
-
-	unsigned char bmp_file_header[14];
-	unsigned char bmp_info_header[40];
-	unsigned char bmp_pad[3];
-
-	memset(bmp_file_header, 0, sizeof(bmp_file_header));
-	memset(bmp_info_header, 0, sizeof(bmp_info_header));
-
-	fread(bmp_file_header, sizeof(bmp_file_header), 1, f);
-	fread(bmp_info_header, sizeof(bmp_info_header), 1, f);
-
-	if ((bmp_file_header[0] != 'B') || (bmp_file_header[1] != 'M'))
-	{
-		fclose(f);
-		return LOADBMP_INVALID_SIGNATURE;
-	}
-
-	if ((bmp_info_header[14] != 24) && (bmp_info_header[14] != 32))
-	{
-		fclose(f);
-		return LOADBMP_INVALID_BITS_PER_PIXEL;
-	}
-
-	const unsigned int w = (bmp_info_header[4] + (bmp_info_header[5] << 8) + (bmp_info_header[6] << 16) + (bmp_info_header[7] << 24));
-	const unsigned int h = (bmp_info_header[8] + (bmp_info_header[9] << 8) + (bmp_info_header[10] << 16) + (bmp_info_header[11] << 24));
-
-	unsigned char *p = NULL;
-
-	if ((w > 0) && (h > 0))
-	{
-		p = (unsigned char*)malloc(w * h * components);
-
-		if (!p)
+		if (fwrite(bmp_pad, 1, padding, f) != padding)
 		{
 			fclose(f);
-			return LOADBMP_OUT_OF_MEMORY;
-		}
-
-		unsigned int x, y, index;
-
-		for (y = (h - 1); y != -1; y--)
-		{
-			for (x = 0; x < w; x++)
-			{
-				index = (x + y * w) * components;
-
-				fread(p + index + 2, sizeof(unsigned char), 1, f);
-				fread(p + index + 1, sizeof(unsigned char), 1, f);
-				fread(p + index + 0, sizeof(unsigned char), 1, f);
-
-				if (components == LOADBMP_RGBA)
-					p[index + 3] = 255;
-			}
-
-			fread(bmp_pad, 1, ((4 - (w * 3) % 4) % 4), f);
+			return LOADBMP_FILE_OPERATION;
 		}
 	}
-
-	(*width) = w;
-	(*height) = h;
-	(*pixels) = p;
 
 	fclose(f);
 
