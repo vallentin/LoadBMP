@@ -108,7 +108,8 @@ LOADBMP_API unsigned int loadbmp_decode_file(
 	unsigned int w, h;
 	unsigned char *data = NULL;
 
-	unsigned int x, y, i, padding;
+	unsigned int x, i, padding;
+    int y;
 
 	memset(bmp_file_header, 0, sizeof(bmp_file_header));
 	memset(bmp_info_header, 0, sizeof(bmp_info_header));
@@ -206,7 +207,8 @@ LOADBMP_API unsigned int loadbmp_encode_file(
 
 	const unsigned int size = 54 + width * height * 3; // 3 as the BMP format uses 3 channels (red, green, blue and NO alpha)
 
-	unsigned int x, y, i, padding;
+	unsigned int x, i, padding;
+    int y;
 
 	unsigned char pixel[3];
 
