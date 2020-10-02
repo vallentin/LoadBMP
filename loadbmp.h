@@ -1,14 +1,14 @@
 
-// Author: Christian Vallentin <mail@vallentinsource.com>
-// Website: http://vallentinsource.com
-// Repository: https://github.com/MrVallentin/LoadBMP
+// Author: Christian Vallentin <vallentin.source@gmail.com>
+// Website: http://vallentin.dev
+// Repository: https://github.com/vallentin/LoadBMP
 //
 // Date Created: January 03, 2014
 // Last Modified: August 13, 2016
 //
 // Version: 1.1.0
 
-// Copyright (c) 2014-2016 Christian Vallentin <mail@vallentinsource.com>
+// Copyright (c) 2014-2016 Christian Vallentin <vallentin.source@gmail.com>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -139,7 +139,7 @@ LOADBMP_API unsigned int loadbmp_decode_file(
 
 	w = (bmp_info_header[4] + (bmp_info_header[5] << 8) + (bmp_info_header[6] << 16) + (bmp_info_header[7] << 24));
 	h = (bmp_info_header[8] + (bmp_info_header[9] << 8) + (bmp_info_header[10] << 16) + (bmp_info_header[11] << 24));
-	
+
 	if ((w > 0) && (h > 0))
 	{
 		data = (unsigned char*)malloc(w * h * components);
