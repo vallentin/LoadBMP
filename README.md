@@ -59,7 +59,7 @@ Before submitting bugs, make sure that you're using the latest version of [LoadB
 ## License
 
 ```
-Copyright (c) 2016 Christian Vallentin <mail@vallentinsource.com>
+Copyright (c) 2016 Christian Vallentin <vallentin.source@gmail.com>
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -82,15 +82,15 @@ freely, subject to the following restrictions:
 ```
 
 
-[LoadBMP]: https://github.com/MrVallentin/LoadBMP
-[LoadBMPLicense]: https://github.com/MrVallentin/LoadBMP/blob/master/LICENSE
+[LoadBMP]: https://github.com/vallentin/LoadBMP
+[LoadBMPLicense]: https://github.com/vallentin/LoadBMP/blob/master/LICENSE
 
-[LoadBMPBuildStatus]: https://drone.io/github.com/MrVallentin/LoadBMP/status.png
-[LoadBMPCI]: https://drone.io/github.com/MrVallentin/LoadBMP/latest
+[LoadBMPBuildStatus]: https://drone.io/github.com/vallentin/LoadBMP/status.png
+[LoadBMPCI]: https://drone.io/github.com/vallentin/LoadBMP/latest
 
 [LoadBMPVersionBadge]: https://img.shields.io/badge/release-v1.0.0-blue.svg
 [LoadBMPLicenseBadge]: https://img.shields.io/badge/license-%20free%20to%20use%2C%20share%2C%20modify%20and%20redistribute-blue.svg
 
-[LoadBMPIssues]: https://github.com/MrVallentin/LoadBMP/issues
+[LoadBMPIssues]: https://github.com/vallentin/LoadBMP/issues
 
 [BMP]: https://en.wikipedia.org/wiki/BMP_file_format
