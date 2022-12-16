@@ -150,7 +150,7 @@ LOADBMP_API unsigned int loadbmp_decode_file(
 			return LOADBMP_OUT_OF_MEMORY;
 		}
 
-		for (y = (h - 1); y != -1; y--)
+		for (y = (h - 1); (int)y != -1; y--)
 		{
 			for (x = 0; x < w; x++)
 			{
@@ -164,7 +164,7 @@ LOADBMP_API unsigned int loadbmp_decode_file(
 					return LOADBMP_INVALID_FILE_FORMAT;
 				}
 
-				data[i] ^= data[i + 2] ^= data[i] ^= data[i + 2]; // BGR -> RGB
+				data[i] ^= data[i + 2]; data[i + 2] ^= data[i]; data[i] ^= data[i + 2]; //data[i] ^= data[i + 2] ^= data[i] ^= data[i + 2]; // BGR -> RGB
 
 				if (components == LOADBMP_RGBA)
 					data[i + 3] = 255;
@@ -209,7 +209,7 @@ LOADBMP_API unsigned int loadbmp_encode_file(
 	unsigned int x, y, i, padding;
 
 	unsigned char pixel[3];
-
+     
 	bmp_file_header[2] = (unsigned char)(size);
 	bmp_file_header[3] = (unsigned char)(size >> 8);
 	bmp_file_header[4] = (unsigned char)(size >> 16);
@@ -237,15 +237,15 @@ LOADBMP_API unsigned int loadbmp_encode_file(
 		return LOADBMP_FILE_OPERATION;
 	}
 
-	for (y = (height - 1); y != -1; y--)
+	for (y = (height - 1); (int)y != -1; y--)
 	{
 		for (x = 0; x < width; x++)
 		{
 			i = (x + y * width) * components;
 
 			memcpy(pixel, imageData + i, sizeof(pixel));
-
-			pixel[0] ^= pixel[2] ^= pixel[0] ^= pixel[2]; // RGB -> BGR
+            
+			pixel[0] ^= pixel[2]; pixel[2] ^= pixel[0]; pixel[0] ^= pixel[2]; //pixel[0] ^= pixel[2] ^= pixel[0] ^= pixel[2]; // RGB -> BGR
 
 			if (fwrite(pixel, sizeof(pixel), 1, f) == 0)
 			{
